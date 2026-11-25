@@ -1,6 +1,11 @@
 import os
 import math
+import io
+import base64
 import pandas as pd
+
+os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -31,14 +36,6 @@ PARAMETER_FILE = os.path.join(
     "hasil_simulasi",
     "parameter_kalibrasi.csv"
 )
-
-STATIC_IMAGE_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "static",
-    "images"
-)
-
-os.makedirs(STATIC_IMAGE_DIR, exist_ok=True)
 
 
 # =========================================================
@@ -210,12 +207,7 @@ def hitung_ringkasan(hasil):
 
 def buat_grafik(hasil):
 
-    nama_file = "grafik_simulasi_web.png"
-
-    lokasi_file = os.path.join(
-        STATIC_IMAGE_DIR,
-        nama_file
-    )
+    buffer = io.BytesIO()
 
     plt.figure(figsize=(12, 5))
 
@@ -245,13 +237,20 @@ def buat_grafik(hasil):
     plt.tight_layout()
 
     plt.savefig(
-        lokasi_file,
+        buffer,
+        format="png",
         dpi=150
     )
 
     plt.close()
 
-    return nama_file
+    buffer.seek(0)
+
+    grafik_base64 = base64.b64encode(
+        buffer.getvalue()
+    ).decode("utf-8")
+
+    return grafik_base64
 
 
 # =========================================================
