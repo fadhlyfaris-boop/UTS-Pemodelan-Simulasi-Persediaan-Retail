@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Simulasi Persediaan Retail</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            background-color: #173b57;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #173b57, #2875a5);
+            color: white;
+            padding: 35px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+        }
+
+        .metric-card {
+            border-left: 5px solid #2875a5;
+        }
+
+        .metric-value {
+            font-size: 27px;
+            font-weight: bold;
+            color: #173b57;
+        }
+
+        .section-title {
+            color: #173b57;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background-color: #173b57;
+            border-color: #173b57;
+        }
+
+        .btn-primary:hover {
+            background-color: #2875a5;
+            border-color: #2875a5;
+        }
+
+        footer {
+            color: #777;
+            font-size: 13px;
+        }
+
+        .table-responsive {
+            max-height: 450px;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-dark">
+    <div class="container">
+        <span class="navbar-brand fw-bold">
+            SIMULASI PERSEDIAAN RETAIL
+        </span>
+        <span class="text-white small">
+            Pemodelan dan Simulasi
+        </span>
+    </div>
+</nav>
+
+<div class="container py-4">
+
+    <section class="hero">
+        <h2 class="fw-bold">
+            Dashboard Simulasi Persediaan Retail
+        </h2>
+
+        <p class="mb-2">
+            Pemodelan sistem dinamik persediaan produk retail
+            berdasarkan variasi permintaan dan kebijakan pemesanan ulang.
+        </p>
+
+        <small>
+            Objek simulasi: Store S004 – Product P0020
+        </small>
+    </section>
+
+    <div class="row g-4">
+
+        <div class="col-lg-4">
+
+            <div class="card p-4">
+
+                <h5 class="section-title mb-3">
+                    Pengaturan Simulasi
+                </h5>
+
+                <form method="POST">
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Lead Time
+                        </label>
+
+                        <select
+                            class="form-select"
+                            name="lead_time"
+                            required
+                        >
+
+                            <option value="1"
+                                {% if lead_time == 1 %}selected{% endif %}>
+                                1 Hari
+                            </option>
+
+                            <option value="2"
+                                {% if lead_time == 2 %}selected{% endif %}>
+                                2 Hari
+                            </option>
+
+                            <option value="3"
+                                {% if lead_time == 3 %}selected{% endif %}>
+                                3 Hari
+                            </option>
+
+                        </select>
+
+                        <small class="text-muted">
+                            Waktu tunggu kedatangan pesanan.
+                        </small>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label fw-semibold">
+                            Safety Stock (Unit)
+                        </label>
+
+                        <input
+                            type="number"
+                            class="form-control"
+                            name="safety_stock"
+                            min="0"
+                            value="{{ safety_stock if safety_stock is not none else '' }}"
+                            placeholder="Gunakan nilai bawaan jika kosong"
+                        >
+
+                        <small class="text-muted">
+                            Kosongkan untuk menggunakan Safety Stock
+                            hasil kalibrasi.
+                        </small>
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary w-100"
+                    >
+                        Jalankan Simulasi
+                    </button>
+
+                </form>
+
+                {% if pesan_error %}
+
+                <div class="alert alert-danger mt-3 mb-0">
+                    {{ pesan_error }}
+                </div>
+
+                {% endif %}
+
+            </div>
+
+            <div class="card p-4 mt-4">
+
+                <h5 class="section-title">
+                    Informasi Model
+                </h5>
+
+                <hr>
+
+                <p class="mb-2">
+                    <strong>Store:</strong> S004
+                </p>
+
+                <p class="mb-2">
+                    <strong>Product:</strong> P0020
+                </p>
+
+                <p class="mb-2">
+                    <strong>Data Pengujian:</strong> 366 Hari
+                </p>
+
+                <p class="mb-2">
+                    <strong>Periode:</strong> 2023–2024
+                </p>
+
+                <p class="mb-0">
+                    <strong>Kebijakan:</strong> Reorder Point
+                    dan Safety Stock
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="col-lg-8">
+
+            {% if ringkasan %}
+
+            <div class="card p-4 mb-4">
+
+                <h5 class="section-title mb-3">
+                    Parameter Simulasi
+                </h5>
+
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <div class="bg-light p-3 rounded">
+                            <small>Lead Time</small>
+                            <h4>{{ parameter.lead_time }} Hari</h4>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="bg-light p-3 rounded">
+                            <small>Safety Stock</small>
+                            <h4>{{ parameter.safety_stock }} Unit</h4>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="bg-light p-3 rounded">
+                            <small>Reorder Point</small>
+                            <h4>{{ parameter.reorder_point }} Unit</h4>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="bg-light p-3 rounded">
+                            <small>Target Persediaan</small>
+                            <h4>{{ parameter.target_persediaan }} Unit</h4>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <h5 class="section-title mb-3">
+                Hasil Simulasi
+            </h5>
+
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-6">
+                    <div class="card metric-card p-3">
+                        <small>Total Permintaan</small>
+                        <div class="metric-value">
+                            {{ "{:,}".format(ringkasan.total_demand) }}
+                        </div>
+                        <small>Unit</small>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card metric-card p-3">
+                        <small>Total Penjualan Aktual</small>
+                        <div class="metric-value">
+                            {{ "{:,}".format(ringkasan.total_sales) }}
+                        </div>
+                        <small>Unit</small>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card metric-card p-3">
+                        <small>Lost Sales</small>
+                        <div class="metric-value">
+                            {{ "{:,}".format(ringkasan.lost_sales) }}
+                        </div>
+                        <small>Unit</small>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card metric-card p-3">
+                        <small>Fill Rate</small>
+                        <div class="metric-value">
+                            {{ ringkasan.fill_rate }}%
+                        </div>
+                        <small>Tingkat pemenuhan permintaan</small>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card metric-card p-3">
+                        <small>Rata-rata Persediaan</small>
+                        <div class="metric-value">
+                            {{ ringkasan.rata_rata_persediaan }}
+                        </div>
+                        <small>Unit</small>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card metric-card p-3">
+                        <small>Hari Stockout</small>
+                        <div class="metric-value">
+                            {{ ringkasan.hari_stockout }}
+                        </div>
+                        <small>Hari dengan Lost Sales</small>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="card p-4 mb-4">
+
+                <h5 class="section-title mb-3">
+                    Grafik Persediaan dan Permintaan
+                </h5>
+
+                <img
+                    src="{{ url_for('static', filename='images/' + grafik) }}"
+                    class="img-fluid"
+                    alt="Grafik hasil simulasi persediaan"
+                >
+
+            </div>
+
+            <div class="card p-4">
+
+                <h5 class="section-title mb-3">
+                    Detail Hasil Simulasi Harian
+                </h5>
+
+                <div class="table-responsive">
+
+                    <table class="table table-striped table-hover table-sm">
+
+                        <thead class="table-dark">
+
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Demand</th>
+                                <th>Persediaan Awal</th>
+                                <th>Kedatangan</th>
+                                <th>Penjualan</th>
+                                <th>Lost Sales</th>
+                                <th>Persediaan Akhir</th>
+                                <th>Pemesanan</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            {% for row in hasil.itertuples() %}
+
+                            <tr>
+                                <td>{{ row.Date.strftime('%d-%m-%Y') }}</td>
+                                <td>{{ row.Demand }}</td>
+                                <td>{{ row.Persediaan_Awal_Hari }}</td>
+                                <td>{{ row.Arrival_Quantity }}</td>
+                                <td>{{ row.Actual_Sales }}</td>
+                                <td>{{ row.Lost_Sales }}</td>
+                                <td>{{ row.Persediaan_Akhir }}</td>
+                                <td>{{ row.Order_Quantity }}</td>
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            {% else %}
+
+            <div class="card p-5 text-center h-100">
+
+                <h4 class="section-title">
+                    Simulasi Belum Dijalankan
+                </h4>
+
+                <p class="text-muted mt-3">
+                    Pilih Lead Time dan Safety Stock pada panel
+                    pengaturan, kemudian tekan tombol
+                    Jalankan Simulasi untuk melihat hasilnya.
+                </p>
+
+                <div class="mt-3">
+                    <span class="badge text-bg-primary p-2">
+                        Model Persediaan Retail
+                    </span>
+                    <span class="badge text-bg-secondary p-2">
+                        Sistem Diskrit
+                    </span>
+                </div>
+
+            </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <footer class="text-center mt-5 mb-3">
+        <hr>
+        <p>
+            UTS Pemodelan dan Simulasi |
+            Sistem Dinamik Persediaan Produk Retail
+        </p>
+        <p>
+            Muhammad Faris – Teknik Informatika
+        </p>
+    </footer>
+
+</div>
+
+</body>
+</html>
